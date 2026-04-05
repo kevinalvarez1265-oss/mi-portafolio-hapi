@@ -5,11 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Portafolio Financiero</title>
-    <!-- Tailwind CSS para el diseño moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome para los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase para la base de datos en la nube -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
@@ -108,22 +105,34 @@
 
 <body class="min-h-screen pb-20">
 
-    <!-- BARRA SUPERIOR FIJA -->
     <header class="glass-header sticky top-0 z-50 px-4 py-4 mb-6">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                <i class="fa-solid fa-chart-pie mr-2 text-blue-400"></i>Mi Portafolio
-            </h1>
-            <div class="text-sm font-medium bg-slate-800 px-3 py-1 rounded-full border border-slate-700 shadow-inner">
-                <i class="fa-solid fa-money-bill-transfer text-emerald-400 mr-1"></i>
-                1 USD = <span id="trm-display">Cargando...</span> COP
-            </div>
+                <!-- PANEL DE ESTADOS -->
+                <div class="flex flex-wrap justify-center items-center gap-3">
+                    <!-- Botón de Configuración de Llave (¡LA SOLUCIÓN DE SEGURIDAD!) -->
+                    <button id="btn-config-ia" onclick="configurarAPIKey()"
+                        class="text-xs font-medium bg-violet-600/20 hover:bg-violet-600/40 px-3 py-1.5 rounded-full border border-violet-500/50 text-violet-300 shadow-inner transition-colors">
+                        <i class="fa-solid fa-key mr-1.5"></i> Configurar IA
+                    </button>
+
+                    <!-- Estado de Supabase -->
+                    <div id="db-status"
+                        class="text-xs font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-slate-400 flex items-center shadow-inner">
+                        <i class="fa-solid fa-hard-drive mr-1.5"></i> Memoria Local
+                    </div>
+
+                    <div
+                        class="text-sm font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 shadow-inner">
+                        <i class="fa-solid fa-money-bill-transfer text-emerald-400 mr-1"></i>
+                        1 USD = <span id="trm-display">Cargando...</span> COP
+                    </div>
+                </div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 space-y-6">
 
-        <!-- SECCIÓN 1: RESUMEN DEL PORTAFOLIO -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fa-solid fa-wallet text-6xl"></i></div>
@@ -146,7 +155,6 @@
             </div>
         </section>
 
-        <!-- SECCIÓN NUEVA: RADAR AUTOMÁTICO DE OPORTUNIDADES -->
         <section
             class="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] relative overflow-hidden">
             <div class="absolute -right-10 -top-10 opacity-5 text-amber-500"><i
@@ -174,7 +182,6 @@
                     <div class="loader radar-loader mb-3"></div>
                     <p class="text-sm text-amber-400 font-medium animate-pulse">Filtrando miles de acciones de Wall
                         Street...</p>
-                    <p class="text-xs text-slate-500 mt-1">Conectando con la IA de Google...</p>
                 </div>
                 <div id="radar-result"
                     class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed hidden bg-slate-900/80 p-4 rounded-xl border border-amber-500/20">
@@ -182,7 +189,6 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 2: NOTICIAS DEL MERCADO -->
         <section>
             <h2 class="text-lg font-bold mb-4 flex items-center">
                 <i class="fa-regular fa-newspaper mr-2 text-blue-400"></i> Radar del Mercado (Noticias)
@@ -191,7 +197,6 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: ANÁLISIS DE IMAGEN (IA ESTRATÉGICO) -->
         <section
             class="bg-gradient-to-br from-fintech-card to-slate-800 p-6 rounded-2xl border border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
             <div class="flex items-center mb-4 border-b border-slate-700 pb-2">
@@ -241,7 +246,6 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 4: FORMULARIO MANUAL -->
         <section class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
                 <h2 class="text-lg font-bold">Registrar Nueva Inversión</h2>
@@ -251,18 +255,15 @@
                 </button>
             </div>
 
-            <!-- CAJA DE AYUDA EXPLICATIVA -->
             <div id="form-help"
                 class="hidden bg-slate-800 border border-blue-500/30 p-4 rounded-xl mb-6 text-sm text-slate-300 shadow-inner">
                 <h4 class="font-bold text-blue-400 mb-2"><i class="fa-solid fa-pizza-slice mr-2"></i>La Regla de la
                     Pizza (Acciones Fraccionadas en Hapi)</h4>
                 <ul class="list-disc pl-5 space-y-1">
                     <li><strong>Cantidad:</strong> En Hapi compras "rebanadas". Pon el número exacto de tu recibo (Ej.
-                        <span class="text-emerald-400 font-mono">0.08713</span>).
-                    </li>
+                        <span class="text-emerald-400 font-mono">0.08713</span>).</li>
                     <li><strong>Precio Compra por 1 Acción:</strong> Es lo que vale la pizza ENTERA (En Hapi se llama
-                        <em>Precio de Ejecución</em>. Ej. <span class="text-emerald-400 font-mono">479.47</span>).
-                    </li>
+                        <em>Precio de Ejecución</em>. Ej. <span class="text-emerald-400 font-mono">479.47</span>).</li>
                     <li><strong class="text-amber-400">¡NO pongas el monto total que gastaste!</strong> La app
                         multiplicará automáticamente tus rebanadas por el precio de la pizza entera.</li>
                 </ul>
@@ -302,7 +303,6 @@
             </form>
         </section>
 
-        <!-- SECCIÓN 5: TABLA DE INVERSIONES -->
         <section class="bg-fintech-card rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                 <h2 class="text-lg font-bold">Mis Posiciones Activas</h2>
@@ -321,7 +321,6 @@
                         </tr>
                     </thead>
                     <tbody id="investments-list" class="divide-y divide-slate-800">
-                        <!-- Las inversiones se inyectarán aquí -->
                     </tbody>
                 </table>
                 <div id="empty-state" class="p-8 text-center text-slate-500 hidden">
@@ -354,18 +353,50 @@
         ];
 
         // ==========================================
-        // 🔑 ZONA DE CONFIGURACIÓN DE IA (RESTAURADA)
+        // 🔑 SEGURIDAD: LLAVES LOCALES Y BASE DE DATOS
         // ==========================================
-        // SOCIO: Si lo pruebas en tu editor local, pon tu llave de Google aquí.
-        // Si lo pruebas en el "Preview" del Canvas en la web, déjalo vacío ("").
-        const apiKey = "AIzaSyC8167AKmNIK-3lSlRIvKIPzmuE5WHH9gA";
 
-        // Magia: Si detecta que pusiste llave, usa el modelo rápido 1.5. Si no, usa el VIP del Canvas.
-        const modeloIA = apiKey ? "gemini-2.5-flash" : "gemini-2.5-flash";
+        // IA: Extraemos la llave de la memoria protegida del navegador, NO del código
+        let apiKey = localStorage.getItem('gemini_api_key') || "";
+        let modeloIA = apiKey ? "gemini-2.5-flash" : "gemini-2.5-flash-preview-09-2025";
 
-        // Configuración Supabase
-        const supabaseUrl = 'TU_URL_DE_SUPABASE';
-        const supabaseKey = 'TU_CLAVE_ANON_DE_SUPABASE';
+        // Función visual para cambiar el color del botón si la llave ya existe
+        function actualizarBotonIA() {
+            const btn = document.getElementById('btn-config-ia');
+            if (apiKey) {
+                btn.innerHTML = '<i class="fa-solid fa-check-circle mr-1.5"></i> IA Lista';
+                btn.className = 'text-xs font-medium bg-emerald-600/20 hover:bg-emerald-600/40 px-3 py-1.5 rounded-full border border-emerald-500/50 text-emerald-300 shadow-inner transition-colors';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-key mr-1.5"></i> Configurar IA';
+                btn.className = 'text-xs font-medium bg-violet-600/20 hover:bg-violet-600/40 px-3 py-1.5 rounded-full border border-violet-500/50 text-violet-300 shadow-inner transition-colors';
+            }
+        }
+
+        // Función para que el usuario guarde su llave sin exponerla en GitHub
+        function configurarAPIKey() {
+            const nuevaLlave = prompt("Socio, pega aquí tu API Key de Google (AIzaSy...):\n\nEsta llave se guardará de forma segura en la memoria de TU navegador. Nunca se subirá a GitHub.", apiKey);
+
+            if (nuevaLlave !== null) {
+                const llaveLimpia = nuevaLlave.trim();
+                if (llaveLimpia !== "") {
+                    apiKey = llaveLimpia;
+                    localStorage.setItem('gemini_api_key', apiKey);
+                    modeloIA = "gemini-2.5-flash"; // Forzamos el modelo que descubriste que funciona
+                    actualizarBotonIA(); // Cambiamos el botón a verde
+                    alert("¡Excelente! Llave guardada y protegida en tu dispositivo local.");
+                } else {
+                    localStorage.removeItem('gemini_api_key');
+                    apiKey = "";
+                    actualizarBotonIA(); // Regresamos el botón a morado
+                    alert("Llave eliminada.");
+                }
+            }
+        }
+
+        // Base de Datos: Tus Llaves de la Bóveda (Supabase)
+        // (Estas llaves públicas "anon" de Supabase sí son seguras de subir a GitHub porque tienen reglas de base de datos)
+        const supabaseUrl = 'TU_URL_DE_SUPABASE'; // Ej: 'https://xyzabcdef.supabase.co'
+        const supabaseKey = 'TU_CLAVE_ANON_DE_SUPABASE'; // Ej: 'eyJhbGciOiJIUzI1Ni...'
         let supabaseClient = null;
 
         if (supabaseUrl !== 'TU_URL_DE_SUPABASE') {
@@ -373,12 +404,15 @@
         }
 
         // ==========================================
-        // 🧠 MOTOR INTELIGENTE (CUMPLE CON LAS REGLAS DEL SISTEMA)
+        // 🧠 MOTOR INTELIGENTE DE IA
         // ==========================================
-        // Esta función se encarga de llamar a la IA de Google respetando la regla de "Exponential Backoff"
-        // (reintentar varias veces esperando unos segundos si algo falla).
         async function llamarAPI_IA(payload) {
-            const delays = [1000, 2000, 4000, 8000, 16000]; // Tiempos de espera en milisegundos
+            // Verificación de seguridad antes de gastar internet
+            if (!apiKey && window.location.hostname !== "localhost" && !window.location.hostname.includes("goog")) {
+                throw new Error("Socio, falta tu API Key. Haz clic en el botón '🔑 Configurar IA' en la parte superior para pegarla y protegerla.");
+            }
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
             let errorExacto = "";
 
             for (let i = 0; i <= delays.length; i++) {
@@ -400,10 +434,8 @@
                 } catch (error) {
                     errorExacto = error.message;
                     if (i === delays.length) {
-                        // SOCIO: Aquí está la clave. Mostramos el error EXACTO para dejar de adivinar.
-                        throw new Error(`Socio, falló la conexión con la Inteligencia Artificial.\n\n🚨 DETALLE TÉCNICO EXACTO:\n${errorExacto}\n\n👉 TIP: Revísalo o muéstramelo para saber exactamente qué bloquearon.`);
+                        throw new Error(`Falló la conexión con la IA.\n\n🚨 DETALLE: ${errorExacto}`);
                     }
-                    // Esperar antes de reintentar
                     await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
             }
@@ -569,7 +601,7 @@
         }
 
         // ==========================================
-        // CÓDIGO FINANCIERO (CÁLCULOS)
+        // CÓDIGO FINANCIERO Y BASE DE DATOS (NUBE)
         // ==========================================
 
         async function fetchExchangeRate() {
@@ -585,10 +617,19 @@
         }
 
         async function cargarInversiones() {
+            const statusIndicator = document.getElementById('db-status');
+
             if (supabaseClient) {
                 const { data, error } = await supabaseClient.from('inversiones').select('*');
-                if (!error && data) inversiones = data;
+                if (!error && data) {
+                    inversiones = data;
+                    statusIndicator.innerHTML = '<i class="fa-solid fa-cloud text-emerald-400 mr-1.5"></i><span class="text-emerald-400">Nube Conectada</span>';
+                } else {
+                    console.error("Error cargando de Supabase:", error);
+                    statusIndicator.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-400 mr-1.5"></i><span class="text-red-400">Error BD</span>';
+                }
             } else {
+                statusIndicator.innerHTML = '<i class="fa-solid fa-hard-drive mr-1.5"></i> Memoria Local';
                 const localData = localStorage.getItem('mis_inversiones');
                 if (localData) inversiones = JSON.parse(localData);
             }
@@ -607,7 +648,8 @@
             };
 
             if (supabaseClient) {
-                await supabaseClient.from('inversiones').insert([nuevaInversion]);
+                const { error } = await supabaseClient.from('inversiones').insert([nuevaInversion]);
+                if (error) alert("Error guardando en la nube: " + error.message);
             } else {
                 inversiones.push(nuevaInversion);
                 localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
@@ -619,7 +661,8 @@
 
         async function eliminarInversion(id) {
             if (supabaseClient) {
-                await supabaseClient.from('inversiones').delete().eq('id', id);
+                const { error } = await supabaseClient.from('inversiones').delete().eq('id', id);
+                if (error) alert("Error borrando en la nube: " + error.message);
             } else {
                 inversiones = inversiones.filter(inv => inv.id !== id);
                 localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
@@ -628,7 +671,7 @@
         }
 
         function limpiarDatosLocales() {
-            if (confirm('¿Seguro que quieres borrar todo?')) {
+            if (confirm('¿Seguro que quieres limpiar todo en pantalla? (Si usas Supabase, deberás borrar uno por uno)')) {
                 localStorage.removeItem('mis_inversiones');
                 inversiones = [];
                 renderizarTabla();
@@ -712,6 +755,7 @@
             fetchExchangeRate();
             cargarNoticias();
             cargarInversiones();
+            actualizarBotonIA(); // Verificamos si la llave ya estaba guardada al abrir la página
         };
 
     </script>

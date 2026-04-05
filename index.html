@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Portafolio Financiero</title>
+    <!-- Tailwind CSS para el diseño moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase para la base de datos en la nube -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fintech: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            primary: '#3b82f6',
+                            success: '#10b981',
+                            danger: '#ef4444',
+                            ai: '#8b5cf6',
+                            radar: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .glass-header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #8b5cf6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        .radar-loader {
+            border-top-color: #f59e0b;
+        }
+
+        @keyframes radar-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(245, 158, 11, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+        }
+
+        .btn-radar {
+            animation: radar-pulse 2s infinite;
+        }
+
+        .btn-radar:disabled {
+            animation: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #8b5cf6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-20">
+
+    <!-- BARRA SUPERIOR FIJA -->
+    <header class="glass-header sticky top-0 z-50 px-4 py-4 mb-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                <i class="fa-solid fa-chart-pie mr-2 text-blue-400"></i>Mi Portafolio
+            </h1>
+            <div class="text-sm font-medium bg-slate-800 px-3 py-1 rounded-full border border-slate-700 shadow-inner">
+                <i class="fa-solid fa-money-bill-transfer text-emerald-400 mr-1"></i>
+                1 USD = <span id="trm-display">Cargando...</span> COP
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 space-y-6">
+
+        <!-- SECCIÓN 1: RESUMEN DEL PORTAFOLIO -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fa-solid fa-wallet text-6xl"></i></div>
+                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Balance Total (USD)</h2>
+                <div class="text-4xl font-bold text-white mb-2" id="total-usd">$0.00</div>
+                <div class="text-slate-400 text-sm flex items-center">
+                    <span class="mr-2">Equivalente en Pesos:</span>
+                    <span class="font-bold text-emerald-400" id="total-cop">$0 COP</span>
+                </div>
+            </div>
+
+            <div class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fa-solid fa-arrow-trend-up text-6xl"></i>
+                </div>
+                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Rentabilidad Global</h2>
+                <div class="text-4xl font-bold mb-2" id="total-roi">0.00%</div>
+                <div class="text-slate-400 text-sm">
+                    Ganancia/Pérdida neta: <span id="total-profit" class="font-bold">$0.00</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN NUEVA: RADAR AUTOMÁTICO DE OPORTUNIDADES -->
+        <section
+            class="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 opacity-5 text-amber-500"><i
+                    class="fa-solid fa-satellite-dish text-[15rem]"></i></div>
+
+            <div
+                class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-4 mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-satellite-dish text-amber-500 mr-2"></i> Radar de Oportunidades
+                    </h2>
+                    <p class="text-xs text-slate-400 max-w-lg mt-1">
+                        ¿No tienes tiempo de vigilar el mercado? Presiona el botón. La IA buscará en este instante las
+                        inversiones más prometedoras para perfiles ocupados.
+                    </p>
+                </div>
+                <button id="btn-radar" onclick="escanearOportunidades()"
+                    class="btn-radar bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-2 px-6 rounded-full transition-colors flex items-center whitespace-nowrap shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-radar mr-2"></i> Escanear Mercado Hoy
+                </button>
+            </div>
+
+            <div class="relative z-10">
+                <div id="radar-loading" class="hidden flex-col items-center justify-center py-6">
+                    <div class="loader radar-loader mb-3"></div>
+                    <p class="text-sm text-amber-400 font-medium animate-pulse">Filtrando miles de acciones de Wall
+                        Street...</p>
+                    <p class="text-xs text-slate-500 mt-1">Conectando con la IA de Google...</p>
+                </div>
+                <div id="radar-result"
+                    class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed hidden bg-slate-900/80 p-4 rounded-xl border border-amber-500/20">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: NOTICIAS DEL MERCADO -->
+        <section>
+            <h2 class="text-lg font-bold mb-4 flex items-center">
+                <i class="fa-regular fa-newspaper mr-2 text-blue-400"></i> Radar del Mercado (Noticias)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="news-container">
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: ANÁLISIS DE IMAGEN (IA ESTRATÉGICO) -->
+        <section
+            class="bg-gradient-to-br from-fintech-card to-slate-800 p-6 rounded-2xl border border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
+            <div class="flex items-center mb-4 border-b border-slate-700 pb-2">
+                <i class="fa-solid fa-robot text-2xl text-violet-400 mr-3"></i>
+                <div>
+                    <h2 class="text-lg font-bold text-white">Analista IA de Portafolio</h2>
+                    <p class="text-xs text-slate-400">Sube foto de tu portafolio o de un recibo de compra/venta de Hapi.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-6 items-start">
+                <div class="w-full md:w-1/3 flex flex-col gap-3">
+                    <label
+                        class="cursor-pointer bg-slate-900 border-2 border-dashed border-violet-500/50 hover:border-violet-400 rounded-xl p-6 text-center transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-violet-400 mb-2"></i>
+                        <span class="block text-sm font-medium text-slate-300">Sube tu Imagen</span>
+                        <input type="file" id="image-upload" accept="image/*" class="hidden"
+                            onchange="previewImage(event)">
+                    </label>
+                    <img id="image-preview"
+                        class="hidden rounded-xl border border-slate-700 max-h-48 object-contain mx-auto w-full"
+                        alt="Vista previa">
+
+                    <button id="btn-analyze" onclick="analizarConIA()" disabled
+                        class="bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center">
+                        <i class="fa-solid fa-bolt mr-2"></i> Evaluar mis acciones
+                    </button>
+                </div>
+
+                <div
+                    class="w-full md:w-2/3 bg-slate-900/50 rounded-xl p-5 border border-slate-700 min-h-[250px] flex flex-col">
+                    <h3 class="text-sm font-semibold text-violet-400 mb-3 uppercase tracking-wide"><i
+                            class="fa-solid fa-chess-knight mr-2"></i> Tu Estrategia Personalizada</h3>
+
+                    <div id="ai-loading" class="hidden flex-col items-center justify-center flex-grow opacity-70">
+                        <div class="loader mb-3"></div>
+                        <p class="text-sm text-slate-400 animate-pulse">Evaluando tu imagen...</p>
+                    </div>
+
+                    <div id="ai-result"
+                        class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
+                        <span class="text-slate-500 italic">Aquí aparecerá el análisis sobre tus acciones actuales o la
+                            transacción que subas...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: FORMULARIO MANUAL -->
+        <section class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+                <h2 class="text-lg font-bold">Registrar Nueva Inversión</h2>
+                <button onclick="toggleHelp()"
+                    class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 px-3 py-1 rounded-full transition-colors flex items-center">
+                    <i class="fa-solid fa-circle-question mr-1"></i> ¿Cómo llenar esto?
+                </button>
+            </div>
+
+            <!-- CAJA DE AYUDA EXPLICATIVA -->
+            <div id="form-help"
+                class="hidden bg-slate-800 border border-blue-500/30 p-4 rounded-xl mb-6 text-sm text-slate-300 shadow-inner">
+                <h4 class="font-bold text-blue-400 mb-2"><i class="fa-solid fa-pizza-slice mr-2"></i>La Regla de la
+                    Pizza (Acciones Fraccionadas en Hapi)</h4>
+                <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Cantidad:</strong> En Hapi compras "rebanadas". Pon el número exacto de tu recibo (Ej.
+                        <span class="text-emerald-400 font-mono">0.08713</span>).
+                    </li>
+                    <li><strong>Precio Compra por 1 Acción:</strong> Es lo que vale la pizza ENTERA (En Hapi se llama
+                        <em>Precio de Ejecución</em>. Ej. <span class="text-emerald-400 font-mono">479.47</span>).
+                    </li>
+                    <li><strong class="text-amber-400">¡NO pongas el monto total que gastaste!</strong> La app
+                        multiplicará automáticamente tus rebanadas por el precio de la pizza entera.</li>
+                </ul>
+            </div>
+
+            <form id="investment-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-blue-400 mb-1">Ticker (Ej. VOO, AAPL)</label>
+                    <input type="text" id="ticker" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white uppercase focus:outline-none focus:border-blue-500"
+                        placeholder="VOO">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-blue-400 mb-1">Cantidad (Tus rebanadas)</label>
+                    <input type="number" step="any" id="cantidad" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                        placeholder="0.08713">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-emerald-400 mb-1">Precio Compra x 1 Acción entera</label>
+                    <input type="number" step="any" id="precio_compra" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                        placeholder="479.47">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-emerald-400 mb-1">Precio Actual x 1 Acción entera</label>
+                    <input type="number" step="any" id="precio_actual" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                        placeholder="485.00">
+                </div>
+                <div class="md:col-span-4 flex justify-end mt-2">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center">
+                        <i class="fa-solid fa-plus mr-2"></i> Guardar en Portafolio
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- SECCIÓN 5: TABLA DE INVERSIONES -->
+        <section class="bg-fintech-card rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h2 class="text-lg font-bold">Mis Posiciones Activas</h2>
+                <button onclick="limpiarDatosLocales()" class="text-xs text-red-400 hover:text-red-300"><i
+                        class="fa-solid fa-trash mr-1"></i>Borrar todo</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider">
+                            <th class="p-4 font-medium">Activo</th>
+                            <th class="p-4 font-medium text-right">Invertido Real</th>
+                            <th class="p-4 font-medium text-right">Valor Actual</th>
+                            <th class="p-4 font-medium text-right">Rentabilidad (ROI)</th>
+                            <th class="p-4 font-medium text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="investments-list" class="divide-y divide-slate-800">
+                        <!-- Las inversiones se inyectarán aquí -->
+                    </tbody>
+                </table>
+                <div id="empty-state" class="p-8 text-center text-slate-500 hidden">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-50"></i>
+                    <p>No tienes inversiones registradas aún.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function toggleHelp() {
+            const helpBox = document.getElementById('form-help');
+            helpBox.classList.toggle('hidden');
+        }
+
+        // ==========================================
+        // VARIABLES GLOBALES Y CONFIGURACIÓN
+        // ==========================================
+        let currentCopRate = 4000;
+        let inversiones = [];
+        let base64ImageData = "";
+        let imageMimeType = "";
+
+        const noticiasDelMercado = [
+            { titulo: "La Reserva Federal evalúa bajar tasas de interés pronto.", fuente: "Reuters", tiempo: "Hace 2h", impacto: "positivo" },
+            { titulo: "Auge de la Inteligencia Artificial impulsa sector tecnológico.", fuente: "Bloomberg", tiempo: "Hace 4h", impacto: "positivo" },
+            { titulo: "Tensiones globales afectan la cadena de suministro de autos eléctricos.", fuente: "CNBC", tiempo: "Hace 5h", impacto: "negativo" }
+        ];
+
+        // ==========================================
+        // 🔑 ZONA DE CONFIGURACIÓN DE IA (RESTAURADA)
+        // ==========================================
+        // SOCIO: Si lo pruebas en tu editor local, pon tu llave de Google aquí.
+        // Si lo pruebas en el "Preview" del Canvas en la web, déjalo vacío ("").
+        const apiKey = "AIzaSyC8167AKmNIK-3lSlRIvKIPzmuE5WHH9gA";
+
+        // Magia: Si detecta que pusiste llave, usa el modelo rápido 1.5. Si no, usa el VIP del Canvas.
+        const modeloIA = apiKey ? "gemini-2.5-flash" : "gemini-2.5-flash";
+
+        // Configuración Supabase
+        const supabaseUrl = 'TU_URL_DE_SUPABASE';
+        const supabaseKey = 'TU_CLAVE_ANON_DE_SUPABASE';
+        let supabaseClient = null;
+
+        if (supabaseUrl !== 'TU_URL_DE_SUPABASE') {
+            supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        }
+
+        // ==========================================
+        // 🧠 MOTOR INTELIGENTE (CUMPLE CON LAS REGLAS DEL SISTEMA)
+        // ==========================================
+        // Esta función se encarga de llamar a la IA de Google respetando la regla de "Exponential Backoff"
+        // (reintentar varias veces esperando unos segundos si algo falla).
+        async function llamarAPI_IA(payload) {
+            const delays = [1000, 2000, 4000, 8000, 16000]; // Tiempos de espera en milisegundos
+            let errorExacto = "";
+
+            for (let i = 0; i <= delays.length; i++) {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modeloIA}:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorData}`);
+                    }
+
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Análisis completado, pero no se generó texto.";
+
+                } catch (error) {
+                    errorExacto = error.message;
+                    if (i === delays.length) {
+                        // SOCIO: Aquí está la clave. Mostramos el error EXACTO para dejar de adivinar.
+                        throw new Error(`Socio, falló la conexión con la Inteligencia Artificial.\n\n🚨 DETALLE TÉCNICO EXACTO:\n${errorExacto}\n\n👉 TIP: Revísalo o muéstramelo para saber exactamente qué bloquearon.`);
+                    }
+                    // Esperar antes de reintentar
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        }
+
+        // ==========================================
+        // RADAR DE OPORTUNIDADES 
+        // ==========================================
+        async function escanearOportunidades() {
+            const resultDiv = document.getElementById('radar-result');
+            const loadingDiv = document.getElementById('radar-loading');
+            const btn = document.getElementById('btn-radar');
+
+            resultDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            loadingDiv.classList.add('flex');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Escaneando...';
+            btn.classList.remove('btn-radar');
+
+            const promptRadar = `Eres un sistema experto 'Stock Screener' de Wall Street.
+            El usuario es un inversor minorista en Colombia que invierte en la bolsa de EE.UU. a través de la app Hapi.
+            Él TRABAJA TODO EL DÍA, por lo que NO puede revisar las gráficas constantemente. Necesita una estrategia de "Buy and Hold" (Comprar y Mantener a largo plazo).
+            
+            Basado en las tendencias globales de hoy, recomiéndale:
+            1. Un ETF seguro (ej. S&P 500, Nasdaq) ideal para dejar su dinero quieto y seguro.
+            2. Dos acciones individuales (Tickers) de empresas MUY SÓLIDAS que estén en un buen momento de compra para mantener por años.
+            
+            Para cada recomendación, dame:
+            - Ticker y Nombre.
+            - Nivel de Riesgo (Bajo/Medio).
+            - Por qué es buena idea para alguien que no tiene tiempo.
+            Usa un tono alentador y formato de lista.`;
+
+            const payload = { contents: [{ parts: [{ text: promptRadar }] }] };
+
+            try {
+                const iaResponseText = await llamarAPI_IA(payload);
+
+                let formattedText = iaResponseText
+                    .replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-amber-400">$1</span>')
+                    .replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+                resultDiv.innerHTML = formattedText;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Aviso:</span><br><br>${error.message}`;
+            } finally {
+                loadingDiv.classList.add('hidden');
+                loadingDiv.classList.remove('flex');
+                resultDiv.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-rotate mr-2"></i> Actualizar Radar';
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // NOTICIAS
+        // ==========================================
+        function cargarNoticias() {
+            const contenedor = document.getElementById('news-container');
+            contenedor.innerHTML = '';
+
+            noticiasDelMercado.forEach(noticia => {
+                const iconoImpacto = noticia.impacto === 'positivo' ? '<i class="fa-solid fa-arrow-up text-emerald-400"></i>' :
+                    (noticia.impacto === 'negativo' ? '<i class="fa-solid fa-arrow-down text-red-400"></i>' :
+                        '<i class="fa-solid fa-minus text-slate-400"></i>');
+
+                contenedor.innerHTML += `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-semibold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">${noticia.fuente}</span>
+                            <span>${iconoImpacto}</span>
+                        </div>
+                        <h3 class="text-sm font-medium text-white mb-2 leading-tight">${noticia.titulo}</h3>
+                        <p class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${noticia.tiempo}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // ==========================================
+        // IA ESTRATÉGICO (ANÁLISIS DE IMAGEN)
+        // ==========================================
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const readerPreview = new FileReader();
+            readerPreview.onload = function (e) {
+                const imgElement = document.getElementById('image-preview');
+                imgElement.src = e.target.result;
+                imgElement.classList.remove('hidden');
+
+                const btn = document.getElementById('btn-analyze');
+                btn.disabled = false;
+            }
+            readerPreview.readAsDataURL(file);
+
+            const readerBase64 = new FileReader();
+            readerBase64.onload = function (e) {
+                const resultUrl = e.target.result;
+                base64ImageData = resultUrl.split(',')[1];
+                imageMimeType = file.type;
+            };
+            readerBase64.readAsDataURL(file);
+        }
+
+        async function analizarConIA() {
+            if (!base64ImageData) return;
+
+            const resultDiv = document.getElementById('ai-result');
+            const loadingDiv = document.getElementById('ai-loading');
+            const btn = document.getElementById('btn-analyze');
+
+            resultDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            loadingDiv.classList.add('flex');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando documento...';
+
+            const contextoNoticias = noticiasDelMercado.map(n => `- ${n.titulo} (Impacto: ${n.impacto})`).join("\n");
+
+            const promptAsesor = `Eres el mejor asesor financiero de Wall Street. 
+            Te comparto:
+            1. Noticias del mercado:
+            ${contextoNoticias}
+            2. Una captura de mi app financiera (puede ser la vista general de mi portafolio o un RECIBO de una orden/transacción específica).
+
+            Por favor:
+            - Si es un recibo de compra/venta, explícame qué transacción acabo de hacer, si la acción que compré/vendí es sólida a largo plazo y si fue un buen movimiento dadas las noticias.
+            - Si es un portafolio general, identifica mis acciones, crúzalas con las noticias y dime si debo MANTENER, VENDER o COMPRAR MÁS de forma general.
+            - Sé muy claro y educativo.`;
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: promptAsesor },
+                        { inlineData: { mimeType: imageMimeType, data: base64ImageData } }
+                    ]
+                }]
+            };
+
+            try {
+                const iaResponseText = await llamarAPI_IA(payload);
+
+                let formattedText = iaResponseText
+                    .replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-violet-400">$1</span>')
+                    .replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+                resultDiv.innerHTML = formattedText;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Aviso:</span><br><br>${error.message}`;
+            } finally {
+                loadingDiv.classList.add('hidden');
+                loadingDiv.classList.remove('flex');
+                resultDiv.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i> Actualizar Análisis';
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // CÓDIGO FINANCIERO (CÁLCULOS)
+        // ==========================================
+
+        async function fetchExchangeRate() {
+            try {
+                const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await response.json();
+                currentCopRate = data.rates.COP;
+                document.getElementById('trm-display').innerText = new Intl.NumberFormat('es-CO').format(currentCopRate);
+                actualizarDashboard();
+            } catch (error) {
+                document.getElementById('trm-display').innerText = currentCopRate + " (Aprox)";
+            }
+        }
+
+        async function cargarInversiones() {
+            if (supabaseClient) {
+                const { data, error } = await supabaseClient.from('inversiones').select('*');
+                if (!error && data) inversiones = data;
+            } else {
+                const localData = localStorage.getItem('mis_inversiones');
+                if (localData) inversiones = JSON.parse(localData);
+            }
+            renderizarTabla();
+            actualizarDashboard();
+        }
+
+        document.getElementById('investment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nuevaInversion = {
+                id: Date.now().toString(),
+                ticker: document.getElementById('ticker').value.toUpperCase(),
+                cantidad: parseFloat(document.getElementById('cantidad').value),
+                precio_compra: parseFloat(document.getElementById('precio_compra').value),
+                precio_actual: parseFloat(document.getElementById('precio_actual').value)
+            };
+
+            if (supabaseClient) {
+                await supabaseClient.from('inversiones').insert([nuevaInversion]);
+            } else {
+                inversiones.push(nuevaInversion);
+                localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
+            }
+
+            e.target.reset();
+            cargarInversiones();
+        });
+
+        async function eliminarInversion(id) {
+            if (supabaseClient) {
+                await supabaseClient.from('inversiones').delete().eq('id', id);
+            } else {
+                inversiones = inversiones.filter(inv => inv.id !== id);
+                localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
+            }
+            cargarInversiones();
+        }
+
+        function limpiarDatosLocales() {
+            if (confirm('¿Seguro que quieres borrar todo?')) {
+                localStorage.removeItem('mis_inversiones');
+                inversiones = [];
+                renderizarTabla();
+                actualizarDashboard();
+            }
+        }
+
+        function renderizarTabla() {
+            const tbody = document.getElementById('investments-list');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (inversiones.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            inversiones.forEach(inv => {
+                const totalInvertido = inv.cantidad * inv.precio_compra;
+                const valorActualTotal = inv.cantidad * inv.precio_actual;
+                const ganancia = valorActualTotal - totalInvertido;
+                const roi = (ganancia / totalInvertido) * 100;
+
+                const colorClase = roi >= 0 ? 'text-fintech-success' : 'text-fintech-danger';
+                const signo = roi >= 0 ? '+' : '';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="font-bold text-white">${inv.ticker}</div>
+                        <div class="text-xs text-slate-400">${inv.cantidad} accs. a $${inv.precio_compra} c/u</div>
+                    </td>
+                    <td class="p-4 text-right text-slate-300">$${totalInvertido.toFixed(2)}</td>
+                    <td class="p-4 text-right font-medium text-white">$${valorActualTotal.toFixed(2)}
+                        <div class="text-xs text-slate-500">Cotización hoy: $${inv.precio_actual}</div>
+                    </td>
+                    <td class="p-4 text-right font-bold ${colorClase}">
+                        ${signo}${roi.toFixed(2)}%
+                        <div class="text-xs font-normal opacity-80">${signo}$${ganancia.toFixed(2)}</div>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="eliminarInversion('${inv.id}')" class="text-slate-500 hover:text-red-400 transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarDashboard() {
+            let totalInvertidoUSD = 0;
+            let totalActualUSD = 0;
+
+            inversiones.forEach(inv => {
+                totalInvertidoUSD += (inv.cantidad * inv.precio_compra);
+                totalActualUSD += (inv.cantidad * inv.precio_actual);
+            });
+
+            const gananciaTotal = totalActualUSD - totalInvertidoUSD;
+            const roiTotal = totalInvertidoUSD > 0 ? (gananciaTotal / totalInvertidoUSD) * 100 : 0;
+            const totalActualCOP = totalActualUSD * currentCopRate;
+
+            document.getElementById('total-usd').innerText = `$${totalActualUSD.toFixed(2)}`;
+            document.getElementById('total-cop').innerText = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalActualCOP);
+
+            const roiElement = document.getElementById('total-roi');
+            const profitElement = document.getElementById('total-profit');
+
+            roiElement.innerText = `${roiTotal >= 0 ? '+' : ''}${roiTotal.toFixed(2)}%`;
+            roiElement.className = `text-4xl font-bold mb-2 ${roiTotal >= 0 ? 'text-fintech-success' : 'text-fintech-danger'}`;
+
+            profitElement.innerText = `${gananciaTotal >= 0 ? '+' : ''}$${gananciaTotal.toFixed(2)}`;
+            profitElement.className = `font-bold ${gananciaTotal >= 0 ? 'text-fintech-success' : 'text-fintech-danger'}`;
+        }
+
+        window.onload = () => {
+            fetchExchangeRate();
+            cargarNoticias();
+            cargarInversiones();
+        };
+
+    </script>
+</body>
+
+</html>

@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Supabase para la base de datos en la nube -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js para gráficos financieros profesionales -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         tailwind.config = {
@@ -112,20 +114,17 @@
     <header class="glass-header sticky top-0 z-50 px-4 py-4 mb-6">
         <div class="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
 
-            <!-- ¡AQUÍ ESTABA EL ERROR DEL DISEÑO! Ya le puse la etiqueta de cierre </h1> correctamente -->
             <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
                 <i class="fa-solid fa-chart-pie mr-2 text-blue-400"></i>Mi Portafolio
             </h1>
 
             <!-- PANEL DE ESTADOS -->
             <div class="flex flex-wrap justify-center items-center gap-3">
-                <!-- Botón de Configuración de Llave (¡LA SOLUCIÓN DE SEGURIDAD!) -->
                 <button id="btn-config-ia" onclick="configurarAPIKey()"
                     class="text-xs font-medium bg-violet-600/20 hover:bg-violet-600/40 px-3 py-1.5 rounded-full border border-violet-500/50 text-violet-300 shadow-inner transition-colors">
                     <i class="fa-solid fa-key mr-1.5"></i> Configurar IA
                 </button>
 
-                <!-- Estado de Supabase -->
                 <div id="db-status"
                     class="text-xs font-medium bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 text-slate-400 flex items-center shadow-inner">
                     <i class="fa-solid fa-hard-drive mr-1.5"></i> Memoria Local
@@ -142,14 +141,13 @@
 
     <main class="max-w-4xl mx-auto px-4 space-y-6">
 
-        <!-- SECCIÓN 1: RESUMEN DEL PORTAFOLIO -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- SECCIÓN 1: RESUMEN DEL PORTAFOLIO Y PROYECCIÓN -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fa-solid fa-wallet text-6xl"></i></div>
-                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Balance Total (USD)</h2>
+                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Balance Actual</h2>
                 <div class="text-4xl font-bold text-white mb-2" id="total-usd">$0.00</div>
                 <div class="text-slate-400 text-sm flex items-center">
-                    <span class="mr-2">Equivalente en Pesos:</span>
                     <span class="font-bold text-emerald-400" id="total-cop">$0 COP</span>
                 </div>
             </div>
@@ -157,15 +155,97 @@
             <div class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fa-solid fa-arrow-trend-up text-6xl"></i>
                 </div>
-                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Rentabilidad Global</h2>
+                <h2 class="text-slate-400 text-sm font-semibold uppercase tracking-wider mb-1">Rentabilidad Real</h2>
                 <div class="text-4xl font-bold mb-2" id="total-roi">0.00%</div>
                 <div class="text-slate-400 text-sm">
                     Ganancia/Pérdida neta: <span id="total-profit" class="font-bold">$0.00</span>
                 </div>
             </div>
+
+            <div
+                class="bg-gradient-to-br from-fintech-card to-blue-900/40 p-6 rounded-2xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-20 text-blue-400"><i
+                        class="fa-solid fa-rocket text-6xl"></i></div>
+                <h2 class="text-blue-300 text-sm font-semibold uppercase tracking-wider mb-1 flex items-center">
+                    <i class="fa-solid fa-crystal-ball mr-1"></i> Proyección a 10 Años
+                </h2>
+                <div class="text-4xl font-bold text-white mb-2" id="total-projection">$0.00</div>
+                <div class="text-blue-300/70 text-xs">
+                    Asumiendo <span class="font-bold text-blue-400">+8% anual</span> (Promedio S&P 500) por interés
+                    compuesto.
+                </div>
+            </div>
         </section>
 
-        <!-- SECCIÓN NUEVA: RADAR AUTOMÁTICO DE OPORTUNIDADES -->
+        <!-- SECCIÓN DE DIVERSIFICACIÓN -->
+        <section class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg relative">
+            <h2 class="text-lg font-bold mb-4 flex items-center border-b border-slate-700 pb-2 text-white">
+                <i class="fa-solid fa-chart-doughnut mr-2 text-blue-400"></i> Diversificación del Portafolio
+            </h2>
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="w-full md:w-1/2 max-w-[250px] relative">
+                    <canvas id="portfolioChart"></canvas>
+                    <div id="chart-empty"
+                        class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 italic">
+                        Agrega inversiones
+                    </div>
+                </div>
+
+                <div
+                    class="w-full md:w-1/2 text-sm text-slate-300 bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 shadow-inner">
+                    <h3 class="font-bold text-emerald-400 mb-2 flex items-center">
+                        <i class="fa-solid fa-scale-balanced mr-2"></i> Gestión de Riesgo (Asset Allocation)
+                    </h3>
+                    <p class="mb-2">En Wall Street, la regla número uno es la protección del capital: <strong>"No pongas
+                            todos los huevos en la misma canasta."</strong></p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                        <li>Este gráfico analiza el "peso" monetario de cada acción.</li>
+                        <li>Si una sola acción ocupa más del <span class="text-amber-400 font-bold">20% - 30%</span> del
+                            círculo, tu portafolio es muy volátil.</li>
+                        <li>Considera equilibrarlo comprando ETFs seguros como el VOO (S&P 500).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN DE NOTICIAS -->
+        <section class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg">
+            <div
+                class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 border-b border-slate-700 pb-3 gap-3">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center text-white">
+                        <i class="fa-regular fa-newspaper mr-2 text-blue-400"></i> Termómetro del Mercado
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Los titulares de hoy que mueven los hilos en Wall Street.</p>
+                </div>
+
+                <button id="btn-analyze-news" onclick="analizarImpactoNoticias()"
+                    class="text-xs bg-violet-600 hover:bg-violet-500 text-white font-medium px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-violet-500/20 flex items-center whitespace-nowrap">
+                    <i class="fa-solid fa-brain mr-2"></i> Explicar impacto en acciones
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="news-container">
+            </div>
+
+            <div id="news-ai-container"
+                class="hidden mt-5 p-5 bg-slate-900/80 border border-violet-500/30 rounded-xl relative overflow-hidden shadow-inner">
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-violet-500"></div>
+                <h3 class="text-xs font-bold text-violet-400 mb-3 uppercase tracking-wider flex items-center">
+                    <i class="fa-solid fa-bolt mr-2"></i> Traducción Financiera (Impacto)
+                </h3>
+                <div id="news-ai-loading" class="hidden flex-col items-center justify-center py-4 opacity-80">
+                    <div class="loader mb-3"></div>
+                    <p class="text-sm text-violet-400 animate-pulse">Analizando correlación entre noticias y tickers...
+                    </p>
+                </div>
+                <div id="news-ai-result"
+                    class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed custom-scrollbar">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: RADAR AUTOMÁTICO DE OPORTUNIDADES -->
         <section
             class="bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.1)] relative overflow-hidden">
             <div class="absolute -right-10 -top-10 opacity-5 text-amber-500"><i
@@ -200,24 +280,15 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 2: NOTICIAS DEL MERCADO -->
-        <section>
-            <h2 class="text-lg font-bold mb-4 flex items-center">
-                <i class="fa-regular fa-newspaper mr-2 text-blue-400"></i> Radar del Mercado (Noticias)
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="news-container">
-            </div>
-        </section>
-
-        <!-- SECCIÓN 3: ANÁLISIS DE IMAGEN (IA ESTRATÉGICO) -->
+        <!-- SECCIÓN: ANÁLISIS DE IMAGEN -->
         <section
             class="bg-gradient-to-br from-fintech-card to-slate-800 p-6 rounded-2xl border border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.15)]">
             <div class="flex items-center mb-4 border-b border-slate-700 pb-2">
                 <i class="fa-solid fa-robot text-2xl text-violet-400 mr-3"></i>
                 <div>
-                    <h2 class="text-lg font-bold text-white">Analista IA de Portafolio</h2>
-                    <p class="text-xs text-slate-400">Sube foto de tu portafolio o de un recibo de compra/venta de Hapi.
-                    </p>
+                    <h2 class="text-lg font-bold text-white">Analista de Recibos y Portafolio</h2>
+                    <p class="text-xs text-slate-400">Sube la captura de pantalla de tu recibo de Hapi para un análisis
+                        experto.</p>
                 </div>
             </div>
 
@@ -236,14 +307,14 @@
 
                     <button id="btn-analyze" onclick="analizarConIA()" disabled
                         class="bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center">
-                        <i class="fa-solid fa-bolt mr-2"></i> Evaluar mis acciones
+                        <i class="fa-solid fa-bolt mr-2"></i> Evaluar imagen
                     </button>
                 </div>
 
                 <div
                     class="w-full md:w-2/3 bg-slate-900/50 rounded-xl p-5 border border-slate-700 min-h-[250px] flex flex-col">
                     <h3 class="text-sm font-semibold text-violet-400 mb-3 uppercase tracking-wide"><i
-                            class="fa-solid fa-chess-knight mr-2"></i> Tu Estrategia Personalizada</h3>
+                            class="fa-solid fa-chess-knight mr-2"></i> Veredicto de la Operación</h3>
 
                     <div id="ai-loading" class="hidden flex-col items-center justify-center flex-grow opacity-70">
                         <div class="loader mb-3"></div>
@@ -252,33 +323,38 @@
 
                     <div id="ai-result"
                         class="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
-                        <span class="text-slate-500 italic">Aquí aparecerá el análisis sobre tus acciones actuales o la
-                            transacción que subas...</span>
+                        <span class="text-slate-500 italic">Aquí aparecerá el análisis sobre la transacción que
+                            subas...</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- SECCIÓN 4: FORMULARIO MANUAL -->
+        <!-- SECCIÓN: FORMULARIO MANUAL CON AUTO-COMPLETADO MAGICO -->
         <section class="bg-fintech-card p-6 rounded-2xl border border-slate-700 shadow-lg">
             <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
-                <h2 class="text-lg font-bold">Registrar Nueva Inversión</h2>
+                <h2 class="text-lg font-bold flex items-center">
+                    Registrar Nueva Inversión <i class="fa-solid fa-wand-magic-sparkles ml-2 text-yellow-400 text-sm"
+                        title="¡Autocompletado inteligente activado!"></i>
+                </h2>
                 <button onclick="toggleHelp()"
                     class="text-xs bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 px-3 py-1 rounded-full transition-colors flex items-center">
                     <i class="fa-solid fa-circle-question mr-1"></i> ¿Cómo llenar esto?
                 </button>
             </div>
 
-            <!-- CAJA DE AYUDA EXPLICATIVA -->
             <div id="form-help"
                 class="hidden bg-slate-800 border border-blue-500/30 p-4 rounded-xl mb-6 text-sm text-slate-300 shadow-inner">
                 <h4 class="font-bold text-blue-400 mb-2"><i class="fa-solid fa-pizza-slice mr-2"></i>La Regla de la
                     Pizza (Acciones Fraccionadas en Hapi)</h4>
                 <ul class="list-disc pl-5 space-y-1">
+                    <li><strong>Ticker:</strong> Escríbelo (Ej. AAPL) y haz clic afuera. ¡La app buscará el precio por
+                        ti en Wall Street!</li>
                     <li><strong>Cantidad:</strong> En Hapi compras "rebanadas". Pon el número exacto de tu recibo (Ej.
                         <span class="text-emerald-400 font-mono">0.08713</span>).</li>
                     <li><strong>Precio Compra por 1 Acción:</strong> Es lo que vale la pizza ENTERA (En Hapi se llama
-                        <em>Precio de Ejecución</em>. Ej. <span class="text-emerald-400 font-mono">479.47</span>).</li>
+                        <em>Precio de Ejecución</em>). La app lo llena, pero si en tu recibo pagaste otro valor
+                        diferente al de hoy, puedes modificarlo.</li>
                     <li><strong class="text-amber-400">¡NO pongas el monto total que gastaste!</strong> La app
                         multiplicará automáticamente tus rebanadas por el precio de la pizza entera.</li>
                 </ul>
@@ -287,9 +363,16 @@
             <form id="investment-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-blue-400 mb-1">Ticker (Ej. VOO, AAPL)</label>
-                    <input type="text" id="ticker" required
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white uppercase focus:outline-none focus:border-blue-500"
-                        placeholder="VOO">
+                    <div class="relative">
+                        <input type="text" id="ticker" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white uppercase focus:outline-none focus:border-blue-500"
+                            placeholder="VOO">
+                        <div id="ticker-loading" class="absolute right-3 top-2.5 hidden">
+                            <i class="fa-solid fa-spinner fa-spin text-blue-400"></i>
+                        </div>
+                    </div>
+                    <p id="ticker-msg" class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-circle-info"></i>
+                        Escribe y haz clic fuera para buscar precio.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-blue-400 mb-1">Cantidad (Tus rebanadas)</label>
@@ -300,14 +383,14 @@
                 <div>
                     <label class="block text-xs font-bold text-emerald-400 mb-1">Precio Compra x 1 Acción entera</label>
                     <input type="number" step="any" id="precio_compra" required
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                        placeholder="479.47">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        placeholder="0.00">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-emerald-400 mb-1">Precio Actual x 1 Acción entera</label>
                     <input type="number" step="any" id="precio_actual" required
-                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                        placeholder="485.00">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        placeholder="0.00">
                 </div>
                 <div class="md:col-span-4 flex justify-end mt-2">
                     <button type="submit"
@@ -318,26 +401,34 @@
             </form>
         </section>
 
-        <!-- SECCIÓN 5: TABLA DE INVERSIONES -->
         <section class="bg-fintech-card rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                <h2 class="text-lg font-bold">Mis Posiciones Activas</h2>
-                <button onclick="limpiarDatosLocales()" class="text-xs text-red-400 hover:text-red-300"><i
-                        class="fa-solid fa-trash mr-1"></i>Borrar todo</button>
+            <div
+                class="p-4 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-800/50 gap-3">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center">
+                        Mis Posiciones Consolidadas
+                    </h2>
+                    <p class="text-xs text-slate-400">Tus compras múltiples del mismo Ticker se agrupan calculando tu
+                        <strong>Precio Promedio (DCA)</strong>.</p>
+                </div>
+
+                <button id="btn-sync-prices" onclick="actualizarPreciosEnVivo()"
+                    class="text-xs font-bold bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 px-4 py-2 rounded-full transition-colors flex items-center border border-emerald-500/30 whitespace-nowrap">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Sincronizar Precios en Vivo
+                </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider">
-                            <th class="p-4 font-medium">Activo</th>
-                            <th class="p-4 font-medium text-right">Invertido Real</th>
+                            <th class="p-4 font-medium">Activo Consolidado</th>
+                            <th class="p-4 font-medium text-right">Invertido & Promedio</th>
                             <th class="p-4 font-medium text-right">Valor Actual</th>
                             <th class="p-4 font-medium text-right">Rentabilidad (ROI)</th>
                             <th class="p-4 font-medium text-center">Acción</th>
                         </tr>
                     </thead>
                     <tbody id="investments-list" class="divide-y divide-slate-800">
-                        <!-- Las inversiones se inyectarán aquí -->
                     </tbody>
                 </table>
                 <div id="empty-state" class="p-8 text-center text-slate-500 hidden">
@@ -362,22 +453,21 @@
         let inversiones = [];
         let base64ImageData = "";
         let imageMimeType = "";
+        let miGraficoPastel = null;
 
         const noticiasDelMercado = [
-            { titulo: "La Reserva Federal evalúa bajar tasas de interés pronto.", fuente: "Reuters", tiempo: "Hace 2h", impacto: "positivo" },
-            { titulo: "Auge de la Inteligencia Artificial impulsa sector tecnológico.", fuente: "Bloomberg", tiempo: "Hace 4h", impacto: "positivo" },
-            { titulo: "Tensiones globales afectan la cadena de suministro de autos eléctricos.", fuente: "CNBC", tiempo: "Hace 5h", impacto: "negativo" }
+            { titulo: "La Reserva Federal anuncia posible recorte de tasas de interés para el próximo mes.", fuente: "Reuters", tiempo: "Hace 1h", impacto: "positivo" },
+            { titulo: "Nvidia y TSMC reportan escasez global de microchips para centros de datos de IA.", fuente: "Bloomberg", tiempo: "Hace 3h", impacto: "positivo" },
+            { titulo: "La demanda de vehículos eléctricos cae en EE.UU.; aumentan aranceles a importaciones chinas.", fuente: "CNBC", tiempo: "Hace 5h", impacto: "negativo" }
         ];
 
         // ==========================================
         // 🔑 SEGURIDAD: LLAVES LOCALES Y BASE DE DATOS
         // ==========================================
 
-        // IA: Extraemos la llave de la memoria protegida del navegador, NO del código
         let apiKey = localStorage.getItem('gemini_api_key') || "";
         let modeloIA = apiKey ? "gemini-2.5-flash" : "gemini-2.5-flash-preview-09-2025";
 
-        // Función visual para cambiar el color del botón si la llave ya existe
         function actualizarBotonIA() {
             const btn = document.getElementById('btn-config-ia');
             if (apiKey) {
@@ -389,7 +479,6 @@
             }
         }
 
-        // Función para que el usuario guarde su llave sin exponerla en GitHub
         function configurarAPIKey() {
             const nuevaLlave = prompt("Socio, pega aquí tu API Key de Google (AIzaSy...):\n\nEsta llave se guardará de forma segura en la memoria de TU navegador. Nunca se subirá a GitHub.", apiKey);
 
@@ -398,22 +487,21 @@
                 if (llaveLimpia !== "") {
                     apiKey = llaveLimpia;
                     localStorage.setItem('gemini_api_key', apiKey);
-                    modeloIA = "gemini-2.5-flash"; // Forzamos el modelo que descubriste que funciona
-                    actualizarBotonIA(); // Cambiamos el botón a verde
+                    modeloIA = "gemini-2.5-flash";
+                    actualizarBotonIA();
                     alert("¡Excelente! Llave guardada y protegida en tu dispositivo local.");
                 } else {
                     localStorage.removeItem('gemini_api_key');
                     apiKey = "";
-                    actualizarBotonIA(); // Regresamos el botón a morado
+                    actualizarBotonIA();
                     alert("Llave eliminada.");
                 }
             }
         }
 
-        // Base de Datos: Tus Llaves de la Bóveda (Supabase)
-        // (Estas llaves públicas "anon" de Supabase sí son seguras de subir a GitHub porque tienen reglas de base de datos)
-        const supabaseUrl = 'TU_URL_DE_SUPABASE'; // Ej: 'https://xyzabcdef.supabase.co'
-        const supabaseKey = 'TU_CLAVE_ANON_DE_SUPABASE'; // Ej: 'eyJhbGciOiJIUzI1Ni...'
+        // Base de Datos: Supabase
+        const supabaseUrl = 'TU_URL_DE_SUPABASE';
+        const supabaseKey = 'TU_CLAVE_ANON_DE_SUPABASE';
         let supabaseClient = null;
 
         if (supabaseUrl !== 'TU_URL_DE_SUPABASE') {
@@ -421,10 +509,152 @@
         }
 
         // ==========================================
+        // 🛡️ MOTOR MULTI-PUENTE BLINDADO PARA YAHOO FINANCE
+        // ==========================================
+        // Si un puente se cae por seguridad de Wall Street, usamos otro táctico automáticamente.
+        async function obtenerPrecioYahoo(ticker) {
+            const url1 = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m`;
+            const url2 = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1m`;
+
+            // Nuestros 3 puentes de alta tecnología
+            const rutas = [
+                // Ruta 1: CodeTabs (El más estable actualmente)
+                async () => {
+                    const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url1)}`);
+                    if (!res.ok) throw new Error("Fallo codetabs");
+                    return await res.json();
+                },
+                // Ruta 2: AllOrigins (Modo envoltorio JSON para evadir bloqueos)
+                async () => {
+                    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url2)}`);
+                    if (!res.ok) throw new Error("Fallo allorigins");
+                    const data = await res.json();
+                    return JSON.parse(data.contents);
+                },
+                // Ruta 3: CorsProxy.io (De respaldo)
+                async () => {
+                    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url1)}`);
+                    if (!res.ok) throw new Error("Fallo corsproxy");
+                    return await res.json();
+                }
+            ];
+
+            for (let ruta of rutas) {
+                try {
+                    const data = await ruta();
+                    // Verificamos que traiga el precio real
+                    if (data && data.chart && data.chart.result && data.chart.result.length > 0) {
+                        const precio = data.chart.result[0].meta.regularMarketPrice;
+                        if (precio) return precio;
+                    }
+                } catch (e) {
+                    console.warn("Un puente fue bloqueado por Wall Street, usando ruta alternativa...");
+                }
+            }
+            throw new Error("Todos los puentes fueron bloqueados temporalmente.");
+        }
+
+        // ==========================================
+        // 📈 AUTO-COMPLETADO DE PRECIOS (ACTUALIZADO)
+        // ==========================================
+        document.getElementById('ticker').addEventListener('blur', async function () {
+            const ticker = this.value.toUpperCase().trim();
+            if (!ticker) return;
+
+            const loadingIcon = document.getElementById('ticker-loading');
+            const msgText = document.getElementById('ticker-msg');
+            const inputCompra = document.getElementById('precio_compra');
+            const inputActual = document.getElementById('precio_actual');
+
+            loadingIcon.classList.remove('hidden');
+            msgText.className = "text-[10px] text-blue-400 mt-1";
+            msgText.innerHTML = "<i class='fa-solid fa-satellite-dish animate-pulse'></i> Consultando Wall Street...";
+
+            try {
+                // Usamos nuestro nuevo motor blindado
+                const precio = await obtenerPrecioYahoo(ticker);
+
+                inputCompra.value = precio.toFixed(2);
+                inputActual.value = precio.toFixed(2);
+
+                inputCompra.classList.add('bg-emerald-900/50');
+                inputActual.classList.add('bg-emerald-900/50');
+                setTimeout(() => {
+                    inputCompra.classList.remove('bg-emerald-900/50');
+                    inputActual.classList.remove('bg-emerald-900/50');
+                }, 1000);
+
+                msgText.innerHTML = `<i class="fa-solid fa-check"></i> Precio en vivo autocompletado: $${precio.toFixed(2)}`;
+                msgText.className = "text-[10px] text-emerald-400 mt-1 font-bold";
+
+            } catch (error) {
+                console.error("Error buscando precio:", error);
+                msgText.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Símbolo no encontrado o bloqueado por seguridad. Ingresa el precio manualmente.`;
+                msgText.className = "text-[10px] text-amber-400 mt-1";
+            } finally {
+                loadingIcon.classList.add('hidden');
+            }
+        });
+
+        // ==========================================
+        // 🔄 SINCRONIZACIÓN MASIVA EN VIVO (ACTUALIZADA)
+        // ==========================================
+        async function actualizarPreciosEnVivo() {
+            if (inversiones.length === 0) return;
+
+            const btnSync = document.getElementById('btn-sync-prices');
+            btnSync.disabled = true;
+            btnSync.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Sincronizando con Wall Street...';
+
+            const tickersUnicos = [...new Set(inversiones.map(inv => inv.ticker))];
+            let huboCambios = false;
+
+            for (const ticker of tickersUnicos) {
+                try {
+                    // Usamos nuestro nuevo motor blindado
+                    const precioNuevoEnVivo = await obtenerPrecioYahoo(ticker);
+
+                    inversiones.forEach(inv => {
+                        if (inv.ticker === ticker && inv.precio_actual !== precioNuevoEnVivo) {
+                            inv.precio_actual = precioNuevoEnVivo;
+                            huboCambios = true;
+
+                            if (supabaseClient) {
+                                supabaseClient.from('inversiones')
+                                    .update({ precio_actual: precioNuevoEnVivo })
+                                    .eq('id', inv.id)
+                                    .then(({ error }) => { if (error) console.error("Error guardando precio vivo en Supabase", error) });
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error sincronizando ticker ${ticker}:`, error);
+                }
+            }
+
+            if (huboCambios && !supabaseClient) {
+                localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
+            }
+
+            renderizarTabla();
+            actualizarDashboard();
+
+            btnSync.innerHTML = '<i class="fa-solid fa-check mr-1.5"></i> Precios 100% Actualizados';
+            btnSync.classList.replace('text-emerald-400', 'text-white');
+            btnSync.classList.replace('bg-emerald-600/20', 'bg-emerald-600');
+
+            setTimeout(() => {
+                btnSync.innerHTML = '<i class="fa-solid fa-rotate-right mr-1.5"></i> Sincronizar Precios en Vivo';
+                btnSync.classList.replace('text-white', 'text-emerald-400');
+                btnSync.classList.replace('bg-emerald-600', 'bg-emerald-600/20');
+                btnSync.disabled = false;
+            }, 4000);
+        }
+
+        // ==========================================
         // 🧠 MOTOR INTELIGENTE DE IA
         // ==========================================
         async function llamarAPI_IA(payload) {
-            // Verificación de seguridad antes de gastar internet
             if (!apiKey && window.location.hostname !== "localhost" && !window.location.hostname.includes("goog")) {
                 throw new Error("Socio, falta tu API Key. Haz clic en el botón '🔑 Configurar IA' en la parte superior para pegarla y protegerla.");
             }
@@ -455,6 +685,57 @@
                     }
                     await new Promise(resolve => setTimeout(resolve, delays[i]));
                 }
+            }
+        }
+
+        // ==========================================
+        // ANÁLISIS DE IMPACTO DE NOTICIAS
+        // ==========================================
+        async function analizarImpactoNoticias() {
+            const resultContainer = document.getElementById('news-ai-container');
+            const resultDiv = document.getElementById('news-ai-result');
+            const loadingDiv = document.getElementById('news-ai-loading');
+            const btn = document.getElementById('btn-analyze-news');
+
+            resultContainer.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            loadingDiv.classList.add('flex');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Masticando datos...';
+
+            const contextoNoticias = noticiasDelMercado.map(n => `- ${n.titulo}`).join("\n");
+
+            const promptNoticias = `Eres un analista financiero de Wall Street experto en "Análisis Fundamental".
+            Aquí tienes los titulares macroeconómicos más importantes de hoy:
+            ${contextoNoticias}
+
+            Tu tarea es "masticar" esta información para un inversor retail y decirle EXACTAMENTE cómo esto afecta a la bolsa.
+            Por favor, responde estructuradamente:
+            1. Resume en 1 oración el sentimiento general del mercado hoy.
+            2. Menciona 2 o 3 acciones específicas (Tickers) o sectores que se BENEFICIAN DIRECTAMENTE de estas noticias y POR QUÉ.
+            3. Menciona 1 sector o acción que podría verse PERJUDICADO y por qué.
+            Sé muy directo, usa lenguaje sencillo de entender, y usa viñetas.`;
+
+            const payload = { contents: [{ parts: [{ text: promptNoticias }] }] };
+
+            try {
+                const iaResponseText = await llamarAPI_IA(payload);
+
+                let formattedText = iaResponseText
+                    .replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-violet-400">$1</span>')
+                    .replace(/\*(.*?)\*/g, '<i>$1</i>');
+
+                resultDiv.innerHTML = formattedText;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="text-red-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Aviso:</span><br><br>${error.message}`;
+            } finally {
+                loadingDiv.classList.add('hidden');
+                loadingDiv.classList.remove('flex');
+                resultDiv.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-brain mr-2"></i> Actualizar Análisis';
+                btn.disabled = false;
             }
         }
 
@@ -504,14 +785,11 @@
                 loadingDiv.classList.add('hidden');
                 loadingDiv.classList.remove('flex');
                 resultDiv.classList.remove('hidden');
-                btn.innerHTML = '<i class="fa-solid fa-rotate mr-2"></i> Actualizar Radar';
+                btn.innerHTML = '<i class="fa-solid fa-radar mr-2"></i> Escanear Mercado Hoy';
                 btn.disabled = false;
             }
         }
 
-        // ==========================================
-        // NOTICIAS
-        // ==========================================
         function cargarNoticias() {
             const contenedor = document.getElementById('news-container');
             contenedor.innerHTML = '';
@@ -522,7 +800,7 @@
                         '<i class="fa-solid fa-minus text-slate-400"></i>');
 
                 contenedor.innerHTML += `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-slate-500 transition-colors">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm relative overflow-hidden">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-xs font-semibold text-blue-400 bg-blue-400/10 px-2 py-1 rounded">${noticia.fuente}</span>
                             <span>${iconoImpacto}</span>
@@ -574,17 +852,17 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando documento...';
 
-            const contextoNoticias = noticiasDelMercado.map(n => `- ${n.titulo} (Impacto: ${n.impacto})`).join("\n");
+            const contextoNoticias = noticiasDelMercado.map(n => `- ${n.titulo}`).join("\n");
 
             const promptAsesor = `Eres el mejor asesor financiero de Wall Street. 
             Te comparto:
-            1. Noticias del mercado:
+            1. Noticias del mercado actual:
             ${contextoNoticias}
-            2. Una captura de mi app financiera (puede ser la vista general de mi portafolio o un RECIBO de una orden/transacción específica).
+            2. Una captura de mi app financiera (puede ser un recibo de Hapi).
 
             Por favor:
-            - Si es un recibo de compra/venta, explícame qué transacción acabo de hacer, si la acción que compré/vendí es sólida a largo plazo y si fue un buen movimiento dadas las noticias.
-            - Si es un portafolio general, identifica mis acciones, crúzalas con las noticias y dime si debo MANTENER, VENDER o COMPRAR MÁS de forma general.
+            - Si es un recibo de compra/venta, dime qué transacción hice, y explícame si fue un buen movimiento a largo plazo considerando las noticias de hoy.
+            - Si es un portafolio general, crúzalo con las noticias y dime si debo MANTENER, VENDER o COMPRAR MÁS.
             - Sé muy claro y educativo.`;
 
             const payload = {
@@ -650,8 +928,15 @@
                 const localData = localStorage.getItem('mis_inversiones');
                 if (localData) inversiones = JSON.parse(localData);
             }
+
             renderizarTabla();
             actualizarDashboard();
+
+            setTimeout(() => {
+                if (inversiones.length > 0) {
+                    actualizarPreciosEnVivo();
+                }
+            }, 1500);
         }
 
         document.getElementById('investment-form').addEventListener('submit', async (e) => {
@@ -676,15 +961,17 @@
             cargarInversiones();
         });
 
-        async function eliminarInversion(id) {
-            if (supabaseClient) {
-                const { error } = await supabaseClient.from('inversiones').delete().eq('id', id);
-                if (error) alert("Error borrando en la nube: " + error.message);
-            } else {
-                inversiones = inversiones.filter(inv => inv.id !== id);
-                localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
+        async function eliminarPosicion(ticker) {
+            if (confirm(`¿Seguro que quieres borrar TODAS tus compras de ${ticker}?`)) {
+                if (supabaseClient) {
+                    const { error } = await supabaseClient.from('inversiones').delete().eq('ticker', ticker);
+                    if (error) alert("Error borrando en la nube: " + error.message);
+                } else {
+                    inversiones = inversiones.filter(inv => inv.ticker !== ticker);
+                    localStorage.setItem('mis_inversiones', JSON.stringify(inversiones));
+                }
+                cargarInversiones();
             }
-            cargarInversiones();
         }
 
         function limpiarDatosLocales() {
@@ -708,11 +995,28 @@
                 emptyState.classList.add('hidden');
             }
 
+            const portafolioConsolidado = {};
+
             inversiones.forEach(inv => {
-                const totalInvertido = inv.cantidad * inv.precio_compra;
-                const valorActualTotal = inv.cantidad * inv.precio_actual;
-                const ganancia = valorActualTotal - totalInvertido;
-                const roi = (ganancia / totalInvertido) * 100;
+                if (!portafolioConsolidado[inv.ticker]) {
+                    portafolioConsolidado[inv.ticker] = {
+                        ticker: inv.ticker,
+                        cantidadTotal: 0,
+                        costoTotal: 0,
+                        precioActual: inv.precio_actual
+                    };
+                }
+                portafolioConsolidado[inv.ticker].cantidadTotal += inv.cantidad;
+                portafolioConsolidado[inv.ticker].costoTotal += (inv.cantidad * inv.precio_compra);
+                portafolioConsolidado[inv.ticker].precioActual = inv.precio_actual;
+            });
+
+            Object.values(portafolioConsolidado).forEach(pos => {
+                const precioPromedio = pos.costoTotal / pos.cantidadTotal;
+
+                const valorActualTotal = pos.cantidadTotal * pos.precioActual;
+                const ganancia = valorActualTotal - pos.costoTotal;
+                const roi = (ganancia / pos.costoTotal) * 100;
 
                 const colorClase = roi >= 0 ? 'text-fintech-success' : 'text-fintech-danger';
                 const signo = roi >= 0 ? '+' : '';
@@ -721,24 +1025,107 @@
                 tr.className = 'hover:bg-slate-800/50 transition-colors';
                 tr.innerHTML = `
                     <td class="p-4">
-                        <div class="font-bold text-white">${inv.ticker}</div>
-                        <div class="text-xs text-slate-400">${inv.cantidad} accs. a $${inv.precio_compra} c/u</div>
+                        <div class="font-bold text-white">${pos.ticker}</div>
+                        <div class="text-xs text-slate-400">${pos.cantidadTotal.toFixed(4)} accs. totales</div>
                     </td>
-                    <td class="p-4 text-right text-slate-300">$${totalInvertido.toFixed(2)}</td>
-                    <td class="p-4 text-right font-medium text-white">$${valorActualTotal.toFixed(2)}
-                        <div class="text-xs text-slate-500">Cotización hoy: $${inv.precio_actual}</div>
+                    <td class="p-4 text-right text-slate-300">
+                        $${pos.costoTotal.toFixed(2)}
+                        <div class="text-xs text-slate-500">Promedio: $${precioPromedio.toFixed(2)} c/u</div>
+                    </td>
+                    <td class="p-4 text-right font-medium text-white">
+                        $${valorActualTotal.toFixed(2)}
+                        <div class="text-xs text-slate-500">Cotización viva: $${pos.precioActual.toFixed(2)}</div>
                     </td>
                     <td class="p-4 text-right font-bold ${colorClase}">
                         ${signo}${roi.toFixed(2)}%
                         <div class="text-xs font-normal opacity-80">${signo}$${ganancia.toFixed(2)}</div>
                     </td>
                     <td class="p-4 text-center">
-                        <button onclick="eliminarInversion('${inv.id}')" class="text-slate-500 hover:text-red-400 transition-colors">
+                        <button onclick="eliminarPosicion('${pos.ticker}')" class="text-slate-500 hover:text-red-400 transition-colors" title="Borrar toda la posición">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // 📊 GRÁFICO DE DIVERSIFICACIÓN PROFESIONAL
+        // ==========================================
+        function dibujarGraficoDiversificacion() {
+            const ctx = document.getElementById('portfolioChart');
+            if (!ctx) return;
+
+            const chartEmptyMsg = document.getElementById('chart-empty');
+
+            if (inversiones.length === 0) {
+                chartEmptyMsg.classList.remove('hidden');
+                if (miGraficoPastel) miGraficoPastel.destroy();
+                return;
+            } else {
+                chartEmptyMsg.classList.add('hidden');
+            }
+
+            const valoresPorTicker = {};
+            inversiones.forEach(inv => {
+                const valorActualDeEstaPosicion = inv.cantidad * inv.precio_actual;
+                if (valoresPorTicker[inv.ticker]) {
+                    valoresPorTicker[inv.ticker] += valorActualDeEstaPosicion;
+                } else {
+                    valoresPorTicker[inv.ticker] = valorActualDeEstaPosicion;
+                }
+            });
+
+            const etiquetas = Object.keys(valoresPorTicker);
+            const datos = Object.values(valoresPorTicker);
+
+            const coloresHex = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#14b8a6'];
+
+            if (miGraficoPastel) {
+                miGraficoPastel.destroy();
+            }
+
+            miGraficoPastel = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: etiquetas,
+                    datasets: [{
+                        data: datos,
+                        backgroundColor: coloresHex.slice(0, etiquetas.length),
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 11, family: 'system-ui' },
+                                boxWidth: 12
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
             });
         }
 
@@ -755,8 +1142,11 @@
             const roiTotal = totalInvertidoUSD > 0 ? (gananciaTotal / totalInvertidoUSD) * 100 : 0;
             const totalActualCOP = totalActualUSD * currentCopRate;
 
+            const proyeccion10Anios = totalActualUSD * Math.pow(1.08, 10);
+
             document.getElementById('total-usd').innerText = `$${totalActualUSD.toFixed(2)}`;
             document.getElementById('total-cop').innerText = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalActualCOP);
+            document.getElementById('total-projection').innerText = `$${proyeccion10Anios.toFixed(2)}`;
 
             const roiElement = document.getElementById('total-roi');
             const profitElement = document.getElementById('total-profit');
@@ -766,13 +1156,15 @@
 
             profitElement.innerText = `${gananciaTotal >= 0 ? '+' : ''}$${gananciaTotal.toFixed(2)}`;
             profitElement.className = `font-bold ${gananciaTotal >= 0 ? 'text-fintech-success' : 'text-fintech-danger'}`;
+
+            dibujarGraficoDiversificacion();
         }
 
         window.onload = () => {
             fetchExchangeRate();
             cargarNoticias();
             cargarInversiones();
-            actualizarBotonIA(); // Verificamos si la llave ya estaba guardada al abrir la página
+            actualizarBotonIA();
         };
 
     </script>
